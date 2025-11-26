@@ -1,64 +1,85 @@
 import express from "express";
+import fetch from "node-fetch";
 import cors from "cors";
+import path from "path";
 
 const app = express();
+const PORT = process.env.PORT || 10000;
+
+// เพื่อใช้ __dirname ใน ES Module
+const __dirname = path.resolve();
+
 app.use(cors());
 app.use(express.json());
 
-// Proxy API: ดึงสตรีมจากทุกประเทศไม่บล็อค
-app.get("/proxy", async (req, res) => {
+// ==========================
+// CONFIG API ต้นทาง
+// ==========================
+const API_BASE = "https://apis.lottox-glo6.cc";
+const API_KEY = "R7Q9FM2XPH8D4WT3L9CFAZ7KQ28MDYXN";
+
+// ==========================
+// 1) Proxy ตารางบอล
+// ==========================
+app.get("/api/schedule", async (req, res) => {
   try {
-    const targetUrl = req.query.url;
-    if (!targetUrl) return res.status(400).json({ error: "No URL provided" });
+    const response = await fetch(`${API_BASE}/api/schedule`, {
+      headers: { "x-api-key": API_KEY }
+    });
 
-    const response = await fetch(targetUrl);
-    const data = await response.arrayBuffer();
+    const json = await response.json();
+    res.json(json);
 
-    res.set("Content-Type", "video/MP2T");
-    res.send(Buffer.from(data));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("schedule error:", err);
+    res.status(500).json({ error: "schedule load failed" });
   }
 });
 
-// Render ต้องใช้พอร์ตนี้
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Proxy running on " + PORT));
-// ================= API SCHEDULE MOCK =================
+// ==========================
+// 2) Proxy playchannelCode
+// ==========================
+app.get("/api/playchannelCode", async (req, res) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/playchannelCode`, {
+      headers: { "x-api-key": API_KEY }
+    });
 
-// ตารางถ่ายทอดสด
-app.get("/api/schedule", (req, res) => {
-  res.json({
-    data: [
-      {
-        league: "Premier League",
-        dateTime: "21:00",
-        teams: {
-          home: { name: "Liverpool", logo: "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg" },
-          away: { name: "Chelsea", logo: "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg" }
-        },
-        channels: [
-          { code: "ch1", icon: "https://i.imgur.com/CEGPnQV.png" }
-        ]
-      }
-    ]
-  });
+    const json = await response.json();
+    res.json(json);
+
+  } catch (err) {
+    console.error("playchannelCode error:", err);
+    res.status(500).json({ error: "playchannelCode failed" });
+  }
 });
 
-// session/baseUrl สำหรับเรียกช่อง
-app.get("/api/playchannel", (req, res) => {
-  res.json({
-    encrypted_session: "dGVzdF9zZXNzaW9u", // base64 "test_session"
-    encrypted_baseUrl: "aHR0cHM6Ly9leGFtcGxlLmNvbS9wbGF5P2NoPQ==" // base64 "https://example.com/play?ch="
-  });
+// ==========================
+// 3) Proxy play-real (POST)
+// ==========================
+app.post("/api/play-real", async (req, res) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/play-real`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": API_KEY
+      },
+      body: JSON.stringify(req.body)
+    });
+
+    const json = await response.json();
+    res.json(json);
+
+  } catch (err) {
+    console.error("play-real error:", err);
+    res.status(500).json({ error: "play-real failed" });
+  }
 });
 
-// decode session + baseUrl
-app.post("/api/playreal", (req, res) => {
-  const { encrypted_session, encrypted_baseUrl } = req.body;
+// ==========================
+// Static เว็บ
+// ==========================
+app.use(express.static(path.join(__dirname, "public")));
 
-  res.json({
-    session: encrypted_session,
-    baseUrl: encrypted_baseUrl
-  });
-});
+app.listen(PORT, () => console.log("Server running on port", PORT));
