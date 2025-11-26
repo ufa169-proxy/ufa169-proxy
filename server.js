@@ -1,17 +1,25 @@
 import express from "express";
+import fetch from "node-fetch";   // ✅ ต้อง import ด้วย
 import cors from "cors";
 import path from "path";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+
 const __dirname = path.resolve();
 
 app.use(cors());
 app.use(express.json());
 
+// =========================
+// CONFIG API ต้นทาง
+// =========================
 const API_BASE = "https://apis.lottox-glo6.cc";
 const API_KEY = "R7Q9FM2XPH8D4WT3L9CFAZ7KQ28MDYXN";
 
+// =========================
+// 1) Proxy schedule
+// =========================
 app.get("/api/schedule", async (req, res) => {
   try {
     const response = await fetch(`${API_BASE}/api/schedule`, {
@@ -25,6 +33,9 @@ app.get("/api/schedule", async (req, res) => {
   }
 });
 
+// =========================
+// 2) Proxy playchannelCode
+// =========================
 app.get("/api/playchannelCode", async (req, res) => {
   try {
     const response = await fetch(`${API_BASE}/api/playchannelCode`, {
@@ -38,6 +49,9 @@ app.get("/api/playchannelCode", async (req, res) => {
   }
 });
 
+// =========================
+// 3) Proxy play-real (POST)
+// =========================
 app.post("/api/play-real", async (req, res) => {
   try {
     const response = await fetch(`${API_BASE}/api/play-real`, {
@@ -56,6 +70,9 @@ app.post("/api/play-real", async (req, res) => {
   }
 });
 
+// =========================
+// Static files
+// =========================
 app.use(express.static(path.join(__dirname, "public")));
 
 app.listen(PORT, () => {
