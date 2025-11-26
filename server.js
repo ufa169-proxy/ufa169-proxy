@@ -6,7 +6,6 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// เพื่อใช้ __dirname ใน ES Module
 const __dirname = path.resolve();
 
 app.use(cors());
@@ -18,63 +17,62 @@ app.use(express.json());
 const API_BASE = "https://apis.lottox-glo6.cc";
 const API_KEY = "R7Q9FM2XPH8D4WT3L9CFAZ7KQ28MDYXN";
 
+// Helper – safe fetch
+async function safeFetch(url, options = {}) {
+  try {
+    const res = await fetch(url, {
+      timeout: 20000,
+      ...options
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Fetch error:", err);
+    return null;
+  }
+}
+
 // ==========================
-// 1) Proxy ตารางบอล
+// 1) ตารางบอล
 // ==========================
 app.get("/api/schedule", async (req, res) => {
-  try {
-    const response = await fetch(`${API_BASE}/api/schedule`, {
-      headers: { "x-api-key": API_KEY }
-    });
+  const result = await safeFetch(`${API_BASE}/api/schedule`, {
+    headers: { "x-api-key": API_KEY }
+  });
 
-    const json = await response.json();
-    res.json(json);
+  if (!result) return res.status(500).json({ error: "schedule failed" });
 
-  } catch (err) {
-    console.error("schedule error:", err);
-    res.status(500).json({ error: "schedule load failed" });
-  }
+  res.json(result);
 });
 
 // ==========================
-// 2) Proxy playchannelCode
+// 2) playchannelCode
 // ==========================
 app.get("/api/playchannelCode", async (req, res) => {
-  try {
-    const response = await fetch(`${API_BASE}/api/playchannelCode`, {
-      headers: { "x-api-key": API_KEY }
-    });
+  const result = await safeFetch(`${API_BASE}/api/playchannelCode`, {
+    headers: { "x-api-key": API_KEY }
+  });
 
-    const json = await response.json();
-    res.json(json);
+  if (!result) return res.status(500).json({ error: "playchannelCode failed" });
 
-  } catch (err) {
-    console.error("playchannelCode error:", err);
-    res.status(500).json({ error: "playchannelCode failed" });
-  }
+  res.json(result);
 });
 
 // ==========================
-// 3) Proxy play-real (POST)
+// 3) play-real
 // ==========================
 app.post("/api/play-real", async (req, res) => {
-  try {
-    const response = await fetch(`${API_BASE}/api/play-real`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": API_KEY
-      },
-      body: JSON.stringify(req.body)
-    });
+  const result = await safeFetch(`${API_BASE}/api/play-real`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY
+    },
+    body: JSON.stringify(req.body)
+  });
 
-    const json = await response.json();
-    res.json(json);
+  if (!result) return res.status(500).json({ error: "play-real failed" });
 
-  } catch (err) {
-    console.error("play-real error:", err);
-    res.status(500).json({ error: "play-real failed" });
-  }
+  res.json(result);
 });
 
 // ==========================
